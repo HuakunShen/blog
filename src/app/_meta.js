@@ -4,10 +4,10 @@ export default {
   },
   docs: {
     type: 'page',
-    title: 'Documentation'
+    title: 'Content'
   },
-  blog: {
-    type: 'page',
-    title: 'Blog'
-  }
+  // blog: {
+  //   type: 'page',
+  //   title: 'Blog'
+  // }
 }
