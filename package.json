@@ -16,12 +16,13 @@
     "fumadocs-ui": "15.0.15",
     "katex": "^0.16.21",
     "next": "15.2.0",
+    "posthog-js": "^1.229.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0"
   },
-  "packageManager": "bun@1.0.0",
+  "packageManager": "bun@1.2.2",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@tailwindcss/postcss": "^4.0.9",
