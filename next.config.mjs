@@ -11,6 +11,8 @@ const config = {
       { hostname: "camo.githubusercontent.com" },
       { hostname: "cdn.hashnode.com" },
       { hostname: "github.com" },
+      { hostname: "*.amazonaws.com" },
+      { hostname: "i.imgur.com" },
     ],
   },
 };
