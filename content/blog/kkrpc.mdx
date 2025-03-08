@@ -1,11 +1,243 @@
 ---
 title: kkrpc
-author: Fuma Nama
-date: 2024-12-15
+author: HK
+date: 2025-03-07
 ---
+Talk is cheap. Show me the code: [https://github.com/kunkunsh/kkrpc](https://github.com/kunkunsh/kkrpc)
 
-## Yo what's up
+Documentation: [https://docs.kkrpc.kunkun.sh/](https://docs.kkrpc.kunkun.sh/)
 
-$1+1=2$
+# What is kkrpc
 
-## Hello
+kkrpc is a Remote Procedural Call protocol designed for TypeScript. Inspired by [comlink](https://github.com/GoogleChromeLabs/comlink) and similar to [tRPC](https://trpc.io/).
+
+> A TypeScript-first RPC library that enables seamless bi-directional communication between processes. Call remote functions as if they were local, with full TypeScript type safety and autocompletion support.
+> 
+> * [JSR Package](https://jsr.io/@kunkun/kkrpc)
+>     
+> * [NPM Pac](https://jsr.io/@kunkun/kkrpc)[kage](https://www.npmjs.com/package/kkrpc)
+>     
+> * [Documen](https://jsr.io/@kunkun/kkrpc)[tati](https://www.npmjs.com/package/kkrpc)[on by JSR](https://jsr.io/@kunkun/kkrpc)
+>     
+> * [Typedoc D](https://www.npmjs.com/package/kkrpc)[oc](https://jsr.io/@kunkun/kkrpc/doc)[umentation](https://jsr.io/@kunkun/kkrpc)
+>     
+
+For example, if you want to run a Deno process from a node.js process or bun process, instead of using argv or stdin, stdout, stderr to communicate, kkrpc can be used to call exposed functions defined in another process like if they were a local function, without worrying about argument parsing or validation.
+
+![](https://camo.githubusercontent.com/30c4bef0204de307d1c413e18fffcfcad6fdbe4ce03677c4d4493d3742943a0d/68747470733a2f2f696d6775722e636f6d2f7652334c6d76302e706e67 align="left")
+
+This functionality is implemented through `stdio`, utilizing a JSON-RPC-like protocol that has been customized to support bi-directional communication and callback functions.
+
+You might wonder why use IPC (Inter-Process Communication) when Deno, Bun, and Node.js are all running TypeScript. Why not simply import modules directly and operate within a single process? You’re absolutely right—in most cases, this isn’t necessary. This implementation is primarily a basic demonstration of what’s possible. The RPC (Remote Procedure Call) communication between these JavaScript/TypeScript runtimes is more of a side effect, as `kkrpc` was originally designed for other use cases.
+
+To expand its versatility, I’ve also created adapters for various protocols, including HTTP, WebSocket, and `postMessage`. This allows `kkrpc` to be used in a wide range of environments, such as communication between iframes, the main thread, web workers, web servers, and browser extensions.
+
+The full feature set can be implemented as long as a two-way communication channel exists, such as WebSocket. HTTP, on the other hand, is inherently passive—servers cannot actively push data to clients. As a result, the communication channel established over HTTP is not truly bidirectional. That said, I don’t recommend using `kkrpc` for HTTP anyway. It wasn’t designed with HTTP in mind, and there are far better alternatives like tRPC. HTTP support is more of a bonus feature, implemented with minimal effort by writing a simple adapter.
+
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1740657706728/f4ec6698-af0a-4793-ae55-7f3284e81d50.png align="center")
+
+Diagrams created by [Excalidraw](https://excalidraw.com/#json=otqFU25B2sSjweA4Sbq9l,7-eY_bzFrGAXLNkOVpQ2Tg).
+
+# Why Did I Create kkrpc?
+
+This project was created for another bigger project [Kunkun](https://kunkun.sh/).
+
+Kunkun uses iframe and web worker as sandboxed extension runtime. Kunkun is the host app like a docker engine and need to expose APIs for extensions (like containers) in sandboxes to call.
+
+I started with basic wrapper functions around `postMessage`. Then I found it too time consuming to support hundreds of APIs.
+
+Then I come across Comlink.
+
+> Comlink makes [WebWorkers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API) enjoyable. Comlink is a **tiny library (1.1kB)**, that removes the mental barrier of thinking about `postMessage` and hides the fact that you are working with workers.
+> 
+> At a more abstract level it is an RPC implementation for `postMessage` and [ES6 Proxies.](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
+
+[Comlink](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) is designed for the main thread to call functions exposed in web worker (also supports iframe).
+
+{/* ![Comlink in action](https://user-images.githubusercontent.com/234957/54164510-cdab2d80-4454-11e9-92d0-7356aa6c5746.png align="left") */}
+
+![](https://user-images.githubusercontent.com/234957/54164510-cdab2d80-4454-11e9-92d0-7356aa6c5746.png)
+
+My use case is the other way, calling functions exposed in main thread from web worker/iframe, and Comlink allows that. So I started using Comlink to expose many APIs from main thread to extensions, and this is where problems begin.
+
+In the main thread, I expose multiple API objects.
+
+```typescript
+// main thread
+expose({
+    fs: {
+        read(file: string) {},
+        write(file: string, content: string) {},
+        exists(file: string): boolean {},
+    },
+    clipboard: {
+        readText: () => {},
+        writeText: (text: string) => {},
+    }
+})
+```
+
+Extensions are expected to import API proxies in API package like this.
+
+```typescript
+import { clipboard, fs, toast } from "@kksh/api/headless"
+```
+
+Each API has a separate API object. So I wrap each of them with `Comlink.wrap()`. Here is a rough demo of how code is written in the `@kksh/api` package.
+
+```typescript
+import { windowEndpoint, wrap, type Remote } from "comlink"
+
+export const clipboard = wrap(windowEndpoint(globalThis.parent)) as unknown as IClipboard
+export const fs = wrap(windowEndpoint(globalThis.parent)) as unknown as IClipboard
+```
+
+This works in debug mode, and has different behavior in release mode.
+
+Comlink will release the proxies created with `wrap` if they are not used any more. See [`Comlink.releaseProxy`](https://github.com/GoogleChromeLabs/comlink?tab=readme-ov-file#comlinkreleaseproxy).
+
+> Every proxy created by Comlink has the `[releaseProxy]()` method. Calling it will detach the proxy and the exposed object from the message channel, allowing both ends to be garbage collected.
+
+```typescript
+const proxy = Comlink.wrap(port);
+// ... use the proxy ...
+proxy[Comlink.releaseProxy]();
+```
+
+> If the browser supports the [WeakRef proposal](https://github.com/tc39/proposal-weakrefs), `[releaseProxy]()` will be called automatically when the proxy created by `wrap()` gets garbage collected.
+
+In my case, I am building a desktop app with Tauri, which uses the WebKit and WebView browsers. When extensions haven't finished running, the proxy is released. If the proxy from the `clipboard` API is released, the `expose` side (main thread) is also released, meaning the `fs` APIs no longer work. I have over 10 APIs, and there's no way to ensure each extension uses all of them to prevent them from being released.
+
+See issues (nobody is maintaining Comlink):
+
+* [How to releaseProxy from the `expose()` side?](https://github.com/GoogleChromeLabs/comlink/issues/674)
+    
+* [How to prevent auto `releaseProxy`](https://github.com/GoogleChromeLabs/comlink/issues/667)
+    
+
+Then I switched to another design. Since `wrap` returns a proxy, I can set its type to whatever I want.
+
+```typescript
+// @kksh/api
+type API = {
+  clipboard: Remote<IClipboard>; // inherit from tauri-api-adapter
+  fs: Remote<IFs>; // customized for kunkun, add file search API on top of tauri-api-adapter's fs API
+};
+const _api = wrap(windowEndpoint(globalThis.parent)) as unknown as API;
+export const { clipboard, fs } = _api;
+```
+
+This method works, but then I encountered a memory overflow error. I'm not sure if it was caused by Comlink or Nuxt.js. I couldn't figure it out after debugging for a while.
+
+In Kunkun, I also want to support calling Deno scripts from extensions running in Web Workers and iframes so that features from Node.js packages can be used. Tauri has a shell API, but I had to implement a whole argument parser for a simple extension, and data passing was also complicated. I even tried base64 encoding request data and passing it to stdin, then decoding the base64 response data from stdout. This felt inefficient. So I created [comlink-stdio](https://github.com/HuakunShen/comlink-stdio), a library built from scratch but inspired by the proxy idea from Comlink. Tauri’s shell API supports `stdio`, allowing me to use the two-way communication channel with `stdin` and `stdout`. I didn’t even read Comlink’s source code when implementing it. I designed it based on how I imagined Comlink was implemented, but for stdio.
+
+I also had a poor developer experience using Nuxt.js and switched to SvelteKit. Nuxt.js feels great at the beginning, but as the project grows, the experience worsens. One problem I had was auto import. It sounds good, but when an error occurred, I had no idea where it came from. I had to start a new project, copy code bit by bit, and find out what was causing the error. I did this so many times and finally decided that was enough.
+
+After switching to SvelteKit, I also decided to stop using Comlink and build my own library, kkrpc. So kkrpc becomes the all-in-one library that can be used to communicate between extension and main thread and shell API with Deno process.
+
+kkrpc is the successor of [comlink-stdio](https://github.com/HuakunShen/comlink-stdio). I already have experience with proxy-style RPC and want to support `postMessage`, so the name `comlink-stdio` is no longer suitable. That’s why is renamed.
+
+It works similarly to Comlink, but don’t care about proxy release. It uses `postMessage` to send request like JSON-RPC.
+
+Here is an example with Web Worker, both side can call `add()` function exposed on the other side with a single channel.
+
+<div data-node-type="callout">
+<div data-node-type="callout-emoji">💡</div>
+<div data-node-type="callout-text">Each end of the channel can expose different APIs, simply pass the 2 API interfaces as generics to <code>RPCChannel</code>. The following example shares the same API interface for both sides to keep the sample short.</div>
+</div>
+
+```typescript
+// math.ts
+export interface API {
+    add: (a: number, b: number) => Promise<number>
+}
+
+export const apiMethods: API = {
+	add: async (a: number, b: number) => a + b
+}
+```
+
+```typescript
+// Main thread
+import { RPCChannel, WorkerChildIO, type DestroyableIoInterface } from "kkrpc"
+
+const worker = new Worker(new URL("./scripts/worker.ts", import.meta.url).href, { type: "module" })
+const io = new WorkerChildIO(worker)
+const rpc = new RPCChannel<API, API, DestroyableIoInterface>(io, { expose: apiMethods })
+const api = rpc.getAPI()
+
+expect(await api.add(1, 2)).toBe(3)
+```
+
+```typescript
+// web worker
+import { RPCChannel, WorkerParentIO, type DestroyableIoInterface } from "kkrpc"
+
+const io: DestroyableIoInterface = new WorkerChildIO()
+const rpc = new RPCChannel<API, API, DestroyableIoInterface>(io, { expose: apiMethods })
+const api = rpc.getAPI()
+
+const sum = await api.add(1, 2)
+expect(sum).toBe(3)
+```
+
+`WorkerChildIO` is the adapter, the same code can be reused with stdio, http, web socket, and browser extensions by swapping the adapter. An adapter is responsible for reading (receiving) and writing (sending) request/responses to the other side of the channel.
+
+I also built an adapter for Tauri’s shell so extensions can use the shell API to call functions exposed from Deno process. This enables much more features for extensions.
+
+Here is an http example in [CodeSandox](https://codesandbox.io/p/devbox/musing-ioana-4glr4d?embed=1&file=%2Fpackage.json)
+
+# Deep Dive
+
+The message structure is different from JSON-RPC 2.0, but similar in concept.
+
+Each message can serve as a request, response or callback. `method` is used to locate the exposed API.
+
+```typescript
+interface Message<T = any> {
+  id: string
+  method: string
+  args: T
+  type: "request" | "response" | "callback" // Add "callback" type
+  callbackIds?: string[] // Add callbackIds field
+}
+```
+
+## **Adapter**
+
+To make `kkRPC` work anywhere, `IoInterface` is introduced. It’s a common interface for any bidirectional communication channel.
+
+```typescript
+interface IoInterface {
+  name: string
+  read(): Promise<Buffer | Uint8Array | string | null> // Reads input
+  write(data: string): Promise<void> // Writes output
+}
+```
+
+`name` is only used for debugging.
+
+Any environment that can establish a connection should be able to implement `read` and `write` function. `read` means reading data from the remote; `write` means writing data to the remote.
+
+So as long as the environment can read and write, it can be used as a communication channel.
+
+To adapt to a new environment, simply implement `IoInterface` on an adapter and pass it to `RPCChannel`.
+
+`RPCChannel` does all the underlying magic, including serialization/deserialization, request-response matching, callback managing, proxy generating, etc.
+
+## **Extend to Other Languages**
+
+JS/TS has the advantage of dynamic typing and super free syntax which allows proxy, eventually allowing calling remote RPC methods like if the are local with TypeScript support.
+
+`kkRPC` was created for TypeScript projects, it doesn’t have a schema like GraphQL or gRPC’s `.proto` file. This project will be so complicated if I want to do that, code generate for other languages will be a ton of work and I don’t want to do that.
+
+Since the underlying protocol is quite simple (similar to JSON-RPC), it’s possible to extend to other languages. Just implement the same IO interface and channel in the target language, it’s not too hard.
+
+The problem is, you can’t reuse the API type/interface from TypeScript, and there is most likely no proxy support (you will need to write the method names). In this case, I don’t think `kkRPC` is a good choice, you lose all the benefits of `kkRPC` (i.e. proxy, TypeScript, intellisense).
+
+If you are sure you need other languages for features like `callback`, then you can implement your own channel and IO adapter.
+
+In a nutshell, if you are using TypeScript on both sides of the channel, kkrpc would be a very convenient choice.
+
+[  
+](https://docs.kkrpc.kunkun.sh/examples/ws/)

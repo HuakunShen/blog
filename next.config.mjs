@@ -4,7 +4,10 @@ const withMDX = createMDX();
 
 /** @type {import('next').NextConfig} */
 const config = {
-	reactStrictMode: true,
+  reactStrictMode: true,
+  images: {
+    domains: ["user-images.githubusercontent.com"],
+  },
 };
 
 export default withMDX(config);
