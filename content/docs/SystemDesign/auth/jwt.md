@@ -1,4 +1,6 @@
-# Json Web Token
+---
+title: Json Web Token
+---
 
 ## Sturcture
 
