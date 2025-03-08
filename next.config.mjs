@@ -13,6 +13,7 @@ const config = {
       { hostname: "github.com" },
       { hostname: "*.amazonaws.com" },
       { hostname: "i.imgur.com" },
+      { hostname: "img.shields.io" },
     ],
   },
 };
