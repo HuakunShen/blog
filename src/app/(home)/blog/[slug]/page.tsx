@@ -21,20 +21,22 @@ export default async function Page(props: {
 				<Link href="/blog">Back</Link>
 			</div>
 			<article className="container flex flex-col px-4 py-8">
-				<div className="prose min-w-0">
-					<InlineTOC items={page.data.toc} />
-					<Mdx components={defaultMdxComponents} />
-				</div>
-				<div className="flex flex-col gap-4 text-sm">
-					<div>
-						<p className="mb-1 text-fd-muted-foreground">Written by</p>
-						<p className="font-medium">{page.data.author}</p>
+				<div className="flex flex-col md:flex-row gap-8">
+					<div className="prose min-w-0 flex-1">
+						<InlineTOC items={page.data.toc} />
+						<Mdx components={defaultMdxComponents} />
 					</div>
-					<div>
-						<p className="mb-1 text-sm text-fd-muted-foreground">At</p>
-						<p className="font-medium">
-							{new Date(page.data.date).toDateString()}
-						</p>
+					<div className="flex flex-col gap-4 text-sm md:w-48 md:shrink-0">
+						<div>
+							<p className="mb-1 text-fd-muted-foreground">Written by</p>
+							<p className="font-medium">{page.data.author}</p>
+						</div>
+						<div>
+							<p className="mb-1 text-sm text-fd-muted-foreground">At</p>
+							<p className="font-medium">
+								{new Date(page.data.date).toDateString()}
+							</p>
+						</div>
 					</div>
 				</div>
 			</article>

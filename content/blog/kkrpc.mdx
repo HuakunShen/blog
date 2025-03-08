@@ -2,6 +2,7 @@
 title: kkrpc
 author: HK
 date: 2025-03-07
+tags: [typescript, rpc, comlink, deno, nodejs, bun, webworker, iframe, tauri, sveltekit, nuxtjs, kunkun]
 ---
 Talk is cheap. Show me the code: [https://github.com/kunkunsh/kkrpc](https://github.com/kunkunsh/kkrpc)
 
@@ -24,7 +25,7 @@ kkrpc is a Remote Procedural Call protocol designed for TypeScript. Inspired by 
 
 For example, if you want to run a Deno process from a node.js process or bun process, instead of using argv or stdin, stdout, stderr to communicate, kkrpc can be used to call exposed functions defined in another process like if they were a local function, without worrying about argument parsing or validation.
 
-![](https://camo.githubusercontent.com/30c4bef0204de307d1c413e18fffcfcad6fdbe4ce03677c4d4493d3742943a0d/68747470733a2f2f696d6775722e636f6d2f7652334c6d76302e706e67 align="left")
+![](https://camo.githubusercontent.com/30c4bef0204de307d1c413e18fffcfcad6fdbe4ce03677c4d4493d3742943a0d/68747470733a2f2f696d6775722e636f6d2f7652334c6d76302e706e67)
 
 This functionality is implemented through `stdio`, utilizing a JSON-RPC-like protocol that has been customized to support bi-directional communication and callback functions.
 
@@ -34,7 +35,7 @@ To expand its versatility, I’ve also created adapters for various protocols, i
 
 The full feature set can be implemented as long as a two-way communication channel exists, such as WebSocket. HTTP, on the other hand, is inherently passive—servers cannot actively push data to clients. As a result, the communication channel established over HTTP is not truly bidirectional. That said, I don’t recommend using `kkrpc` for HTTP anyway. It wasn’t designed with HTTP in mind, and there are far better alternatives like tRPC. HTTP support is more of a bonus feature, implemented with minimal effort by writing a simple adapter.
 
-![](https://cdn.hashnode.com/res/hashnode/image/upload/v1740657706728/f4ec6698-af0a-4793-ae55-7f3284e81d50.png align="center")
+![](https://cdn.hashnode.com/res/hashnode/image/upload/v1740657706728/f4ec6698-af0a-4793-ae55-7f3284e81d50.png)
 
 Diagrams created by [Excalidraw](https://excalidraw.com/#json=otqFU25B2sSjweA4Sbq9l,7-eY_bzFrGAXLNkOVpQ2Tg).
 
@@ -53,8 +54,6 @@ Then I come across Comlink.
 > At a more abstract level it is an RPC implementation for `postMessage` and [ES6 Proxies.](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
 
 [Comlink](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) is designed for the main thread to call functions exposed in web worker (also supports iframe).
-
-{/* ![Comlink in action](https://user-images.githubusercontent.com/234957/54164510-cdab2d80-4454-11e9-92d0-7356aa6c5746.png align="left") */}
 
 ![](https://user-images.githubusercontent.com/234957/54164510-cdab2d80-4454-11e9-92d0-7356aa6c5746.png)
 

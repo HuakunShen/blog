@@ -6,7 +6,11 @@ const withMDX = createMDX();
 const config = {
   reactStrictMode: true,
   images: {
-    domains: ["user-images.githubusercontent.com"],
+    domains: [
+      "user-images.githubusercontent.com",
+      "camo.githubusercontent.com",
+      "cdn.hashnode.com",
+    ],
   },
 };
 
