@@ -2,6 +2,7 @@
 title: Svelte Drag and Drop
 author: HK
 date: 2023-07-28
+tags: [svelte]
 ---
 
 Here is a Drag and Drop wrapper component I wrote for svelte.

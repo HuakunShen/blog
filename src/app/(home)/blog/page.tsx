@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { blog } from "@/lib/source";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const posts = blog.getPages().sort((a, b) => {
@@ -21,6 +23,15 @@ export default function Home() {
             <p className="text-sm text-fd-muted-foreground">
               {new Date(post.data.date).toDateString()}
             </p>
+            <div className="flex gap-2 mt-2">
+              {post.data.tags?.map((tag) => {
+                return (
+                  <Button key={tag} variant="outline" size="sm">
+                    {tag}
+                  </Button>
+                );
+              })}
+            </div>
           </Link>
         ))}
       </div>
