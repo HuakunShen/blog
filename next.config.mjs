@@ -14,6 +14,7 @@ const config = {
       { hostname: "*.amazonaws.com" },
       { hostname: "i.imgur.com" },
       { hostname: "img.shields.io" },
+      { hostname: "jsr.io" },
     ],
   },
 };
