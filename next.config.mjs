@@ -6,10 +6,11 @@ const withMDX = createMDX();
 const config = {
   reactStrictMode: true,
   images: {
-    domains: [
-      "user-images.githubusercontent.com",
-      "camo.githubusercontent.com",
-      "cdn.hashnode.com",
+    remotePatterns: [
+      { hostname: "user-images.githubusercontent.com" },
+      { hostname: "camo.githubusercontent.com" },
+      { hostname: "cdn.hashnode.com" },
+      { hostname: "github.com" },
     ],
   },
 };

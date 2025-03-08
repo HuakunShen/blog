@@ -1,0 +1,269 @@
+---
+title: Svelte Command List Filtering with Virtual List and fuse.js
+author: HK
+date: 2025-03-07
+---
+
+# Background
+
+I am using [shadcn-svelte's Command component](https://next.shadcn-svelte.com/docs/components/command) in my project [Kunkun](https://github.com/kunkunsh/kunkun).
+
+It is using [Bits UI's Command component](https://next.bits-ui.com/docs/components/command) under the hood.
+
+It's used to render Kunkun's command list and template UI extension's list view.
+
+# Problem
+
+It may need to render hundreds of commands or list items, and I got performance problem.
+
+* Initial load is so slow when there are thousands of list items to render.
+    
+* Every time I clear search term there is also a huge delay because it needs to render the entire list.
+    
+
+[Bits UI's Command component](https://next.bits-ui.com/docs/components/command)'s built-in filtering method is also too limited. Its value is a string, and default filtering is on the value. There is also custom filtering option, I can provide a filter function, but still it's hard to implement a advanced filtering on multiple fields of list item object. For example, I need to filter on `title`, `subtitle`, and `keywords` field. It is still possible. I have to construct a value to object map `Record<String, Item>`. Then in the filter function, obtain the original object with value and run filter score function on it.
+
+```typescript
+function customFilter(
+	commandValue: string,
+	search: string,
+	commandKeywords?: string[]
+): number {
+    const obj = dict[commandValue]
+    
+    const score = ... // run scoring algo
+    return score
+}
+```
+
+This becomes more complicated, and why don't I use an existing solution like `fuse.js`?
+
+# Solution
+
+* Use fuse.js for filtering (support multi-fields)
+    
+* Use [**TanStack Virtual**](https://tanstack.com/virtual/latest/docs/introduction) to render the list
+    
+    * Even when there are thousands of list items, only ~30 will be rendered on the list
+        
+
+This solution should be very simple, just follow [**TanStack Virtual**](https://tanstack.com/virtual/latest/docs/introduction)'s example code in docs.
+
+One problem I had was TanStack virtual assumes there is a single array of items to render, but I need to support sections and items. Sections contains items. TanStack Virtual doesn't provide an example to deal with this kind of nested structure.
+
+My solution is to render sections and items in the same list `<div/>`. Use a separate virtualizer for each section. When items in each section are listed one by one via `#each`, they are listed by the virtualizer, so virtualizer can decide whether to really render them based on whether they are really in viewport (this is controlled by `scrollMargin`.
+
+The position of each item are controlled with `translateY` style property, and calculated based on `scrollMargin`. For example, section 1's `scrollMargin` is 0, and if the height of section 1 is 100px, then the scrollMargin for section 2 becomes 100.
+
+## Code
+
+```typescript
+// utils.ts this file contains types and functions for genering dummy data
+import { faker } from "@faker-js/faker"
+
+export function generateId() {
+	return Math.random().toString(36).substring(2, 15)
+}
+
+export type Item = {
+	id: string
+	name: string
+	description: string
+}
+
+export type Section = {
+	name: string
+	items: Item[]
+	sectionRef: HTMLDivElement | null
+	sectionHeight: number
+}
+
+export function getItems(n: number = 10): Item[] {
+	return Array.from({ length: n }, () => ({
+		id: generateId(),
+		name: faker.person.fullName(),
+		description: faker.lorem.sentence()
+	}))
+}
+
+export function getSections(n: number = 10): Section[] {
+	return Array.from({ length: n }, () => ({
+		name: faker.lorem.word(),
+		items: getItems(3),
+		sectionRef: null,
+		sectionHeight: 0
+	}))
+}
+```
+
+`shouldFilter` is set to false in `Command.Root`.
+
+All the filtering are done with fuse.js and svelte runes. When `searchTerm` or list items change, `fuse.search` is run to update `resultingItems`.
+
+```svelte
+<!-- +page.svelte -->
+<script lang="ts">
+	import { getSections, getItems } from "./utils.js"
+	import * as Command from "$lib/components/ui/command/index.ts"
+	import { createVirtualizer, type VirtualItem } from "@tanstack/svelte-virtual"
+	import VirtualGroup from "./VirtualGroup.svelte"
+	import Fuse from "fuse.js"
+	import { setContext } from "svelte"
+
+	const itemHeight = 30
+	setContext("itemHeight", itemHeight)
+
+	const sections = $state(getSections(1))
+	const items = getItems(1000)
+	let searchTerm = $state("")
+	let virtualListEl: HTMLDivElement | null = $state(null)
+	const fuse = new Fuse(items, {
+		includeScore: true,
+		threshold: 0.2,
+		keys: ["name"]
+	})
+	let resultingItems = $derived(
+		// when search term changes, update the resulting items
+		searchTerm.length > 0 ? fuse.search(searchTerm).map((item) => item.item) : items
+	)
+
+	// section total height is auto derived from section refs
+	let sectionTotalHeight = $derived(sections.reduce((acc, s) => acc + (s.sectionHeight ?? 0), 0))
+	// this should be a list of numbers, the first item is 0, the second item equal to first sectionRef.clientHeight, and so on
+	let sectionsCummulativeHeight = $derived(
+		sections.map((s, i) => sections.slice(0, i).reduce((acc, s) => acc + (s.sectionHeight ?? 0), 0))
+	)
+
+	let virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
+		count: items.length,
+		getScrollElement: () => virtualListEl,
+		estimateSize: () => itemHeight,
+		overscan: 5
+	})
+
+	let virtualItems: VirtualItem[] = $state([])
+	let itemsTotalSize = $state(0)
+
+	$effect(() => {
+		void resultingItems
+		$virtualizer.setOptions({ count: resultingItems.length, scrollMargin: sectionTotalHeight })
+		virtualItems = $virtualizer.getVirtualItems()
+		itemsTotalSize = $virtualizer.getTotalSize()
+	})
+</script>
+
+<Command.Root shouldFilter={false}>
+	<Command.Input placeholder="Search..." bind:value={searchTerm} />
+	<Command.List bind:ref={virtualListEl}>
+		<div style="position: relative; height: {itemsTotalSize + sectionTotalHeight}px; width: 100%;">
+			{#each sections as section, i}
+				<VirtualGroup
+					heading={section.name}
+					items={section.items}
+					parentRef={virtualListEl}
+					bind:sectionRef={section.sectionRef}
+					scrollMargin={sectionsCummulativeHeight[i]}
+					bind:sectionHeight={section.sectionHeight}
+					{searchTerm}
+				/>
+			{/each}
+			{#each virtualItems as row (row.index)}
+				<Command.Item
+					style="position: absolute; top: 0; left: 0; width: 100%; height: {row.size}px; transform: translateY({row.start}px);"
+				>
+					<span>{row.index}: {resultingItems[row.index]?.name}</span>
+				</Command.Item>
+			{/each}
+		</div>
+	</Command.List>
+	<footer class="">hello</footer>
+</Command.Root>
+```
+
+Each section has a `sectionRef` and `sectionHeight` field, and are bind to `VirtualGroup`, so when their height changes, `sectionsCummulativeHeight` and `sectionTotalHeight` are also updated with `$derived`.
+
+Each value in `sectionsCummulativeHeight` array is the `scrollMargin` for each section (basically means how much space does your previous sections take).
+
+Within each section/`VirutalGroup`, filtering is done again with fuse.js on items in the section.
+
+```svelte
+<!-- VirtualGroup.svelte -->
+<script lang="ts">
+	import * as Command from "$lib/components/ui/command/index.ts"
+	import type { Item } from "./utils.ts"
+	import { getContext, onMount } from "svelte"
+	import { createVirtualizer, type VirtualItem } from "@tanstack/svelte-virtual"
+	import Fuse from "fuse.js"
+
+	let {
+		heading,
+		items,
+		parentRef,
+		searchTerm,
+		sectionHeight = $bindable(0),
+		sectionRef = $bindable(null),
+		scrollMargin = $bindable(0)
+	}: {
+		heading: string
+		items: Item[]
+		sectionHeight: number
+		searchTerm: string
+		parentRef: HTMLDivElement | null
+		sectionRef: HTMLDivElement | null
+		scrollMargin: number
+	} = $props()
+
+	const fuse = new Fuse(items, {
+		includeScore: true,
+		threshold: 0.2,
+		keys: ["name"]
+	})
+
+	const itemHeight = getContext<number>("itemHeight") ?? 30
+
+	let virtualizer = createVirtualizer<HTMLDivElement, HTMLDivElement>({
+		count: items.length,
+		getScrollElement: () => parentRef,
+		estimateSize: () => itemHeight,
+		overscan: 5
+	})
+	let virtualItems: VirtualItem[] = $state([])
+	let itemsTotalSize = $state(0)
+
+	let resultingItems = $derived(
+		// when search term changes, update the resulting items
+		searchTerm.length > 0 ? fuse.search(searchTerm).map((item) => item.item) : items
+	)
+
+	$effect(() => {
+		// when props.items update, update the fuse collection
+		fuse.setCollection(items)
+	})
+
+	$effect(() => {
+		// when resultingItems changes, update virtualizer count and scrollMargin
+		$virtualizer.setOptions({ count: resultingItems.length, scrollMargin })
+		virtualItems = $virtualizer.getVirtualItems()
+		itemsTotalSize = $virtualizer.getTotalSize()
+	})
+	$effect(() => {
+		sectionHeight = itemsTotalSize + itemHeight
+	})
+</script>
+
+<Command.Group
+	heading={`${heading} (${items.length})`}
+	bind:ref={sectionRef}
+	class="relative"
+	style="height: {sectionHeight}px;"
+>
+	{#each virtualItems as row (row.index)}
+		<Command.Item
+			style="position: absolute; top: 0; left: 0; width: 100%; height: {row.size}px; transform: translateY({row.start -
+				scrollMargin + itemHeight}px);"
+		>
+			<span>{row.index}: {resultingItems[row.index]?.name}</span>
+		</Command.Item>
+	{/each}
+</Command.Group>
+```

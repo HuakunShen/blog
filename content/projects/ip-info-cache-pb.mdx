@@ -1,0 +1,67 @@
+---
+title: IP Info Cache
+---
+
+GitHub Repo: https://github.com/HuakunShen/ip-info-cache-pb
+
+In some of my projects, I need to visualize IP addresses on a map, thus I will need to get the longitude and latitude of the IP address.
+
+IP info APIs costs money. e.g. ipgeolocation.io has a free tier of 30k requests/month.
+
+It's hard to request 30k unique ips in a month, but if the same ip address is checked frequently the free quota could be used up quickly. Thus I built this simple cache server. This cache server is used as a proxy server, requests sent to `/api/info/<:ip>` is forwarded to API service and cached in pocketbase.
+
+## Why Pocketbase?
+
+Key value DB like redis is usually used for caching, however Redis memory is expensive. 
+We may need to store millions of ip addresses.
+
+[Pockethost](https://pockethost.io/) provides free pocketbase service. So I deployed a pocketbase service on pockethost and built this simple cache server.
+
+## Sample Response
+
+```json
+{
+  "calling_code": "+61",
+  "city": "South Brisbane",
+  "connection_type": "",
+  "continent_code": "OC",
+  "continent_name": "Oceania",
+  "country_capital": "Canberra",
+  "country_code2": "AU",
+  "country_code3": "AUS",
+  "country_emoji": "🇦🇺",
+  "country_flag": "https://ipgeolocation.io/static/flags/au_64.png",
+  "country_name": "Australia",
+  "country_name_official": "Commonwealth of Australia",
+  "country_tld": ".au",
+  "currency": {
+    "code": "AUD",
+    "name": "Australian Dollar",
+    "symbol": "A$"
+  },
+  "district": "Brisbane",
+  "geoname_id": "10113228",
+  "ip": "1.1.1.1",
+  "is_eu": false,
+  "isp": "APNIC Research and Development",
+  "languages": "en-AU",
+  "latitude": "-27.47306",
+  "longitude": "153.01421",
+  "organization": "Cloudflare, Inc.",
+  "state_code": "AU-QLD",
+  "state_prov": "Queensland",
+  "time_zone": {
+    "current_time": "2025-03-08 06:13:39.206+1000",
+    "current_time_unix": 1741378419.206,
+    "dst_end": "",
+    "dst_exists": false,
+    "dst_savings": 0,
+    "dst_start": "",
+    "is_dst": false,
+    "name": "Australia/Brisbane",
+    "offset": 10,
+    "offset_with_dst": 10
+  },
+  "zipcode": "4101"
+}
+```

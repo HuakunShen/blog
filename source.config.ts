@@ -6,22 +6,26 @@ import rehypeKatex from "rehype-katex";
 import { z } from "zod";
 
 export const docs = defineDocs({
-	dir: "content/docs",
+  dir: "content/docs",
+});
+
+export const projects = defineDocs({
+  dir: "content/projects",
 });
 
 export default defineConfig({
-	mdxOptions: {
-		remarkPlugins: [remarkMath, remarkMermaid],
-		rehypePlugins: (v) => [rehypeKatex, ...v],
-	},
+  mdxOptions: {
+    remarkPlugins: [remarkMath, remarkMermaid],
+    rehypePlugins: (v) => [rehypeKatex, ...v],
+  },
 });
 
 export const blogPosts = defineCollections({
-	type: "doc",
-	dir: "content/blog",
-	// add required frontmatter properties
-	schema: frontmatterSchema.extend({
-		author: z.string(),
-		date: z.string().date().or(z.date()),
-	}),
+  type: "doc",
+  dir: "content/blog",
+  // add required frontmatter properties
+  schema: frontmatterSchema.extend({
+    author: z.string(),
+    date: z.string().date().or(z.date()),
+  }),
 });
