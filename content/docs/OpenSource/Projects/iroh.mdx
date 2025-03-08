@@ -1,0 +1,22 @@
+---
+title: iroh
+---
+
+https://www.iroh.computer/
+
+> Iroh is a library for building on direct connections between devices, putting more control in the hands of your users.
+
+It's like Magic Wormhole, but more general purpose, not just for sending files.
+
+For hosts that are impossible to connect directly, it fallbacks to use a relay server.
+
+It's written in Rust, which is great. I can use it to build low-level high performance services without worrying about memory safety.
+
+With FFI, like napi-rs, it can be used from other languages.
+
+## Sample Projects
+
+- [Dumbpipe](https://www.dumbpipe.dev/)
+  - > Easy, direct connections that punch through NATs & stay connected as network conditions change.
+- [Sendme](https://www.iroh.computer/sendme)
+  - Use [`iroh-blobs`](https://www.iroh.computer/proto/iroh-blobs) to send files over P2P network, just like Magic Wormhole.
