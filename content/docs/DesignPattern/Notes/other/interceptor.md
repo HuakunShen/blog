@@ -1,0 +1,5 @@
+---
+title: Interceptor Pattern
+---
+
+ 
