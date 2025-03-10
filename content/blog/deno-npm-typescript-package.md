@@ -2,6 +2,7 @@
 title: Problem with Deno + DOM + NPM Package
 date: 2024-10-16
 author: HK
+tags: [Deno, TypeScript]
 ---
 
 I get type error with TypeScript when I try to use Deno + DOM in an npm package.

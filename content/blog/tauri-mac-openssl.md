@@ -2,6 +2,7 @@
 title: Tauri Universal Build for Mac (Solve SSL Problem)
 author: HK
 date: 2024-05-05
+tags: [Tauri, SSL]
 ---
 
 I had problem building a universal Tauri app for Mac (M1 pro).

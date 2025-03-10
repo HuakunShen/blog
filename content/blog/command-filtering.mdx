@@ -2,6 +2,7 @@
 title: Svelte Command List Filtering with Virtual List and fuse.js
 author: HK
 date: 2025-03-07
+tags: ["svelte", "Web"]
 ---
 
 # Background
@@ -16,10 +17,8 @@ It's used to render Kunkun's command list and template UI extension's list view.
 
 It may need to render hundreds of commands or list items, and I got performance problem.
 
-* Initial load is so slow when there are thousands of list items to render.
-    
-* Every time I clear search term there is also a huge delay because it needs to render the entire list.
-    
+- Initial load is so slow when there are thousands of list items to render.
+- Every time I clear search term there is also a huge delay because it needs to render the entire list.
 
 [Bits UI's Command component](https://next.bits-ui.com/docs/components/command)'s built-in filtering method is also too limited. Its value is a string, and default filtering is on the value. There is also custom filtering option, I can provide a filter function, but still it's hard to implement a advanced filtering on multiple fields of list item object. For example, I need to filter on `title`, `subtitle`, and `keywords` field. It is still possible. I have to construct a value to object map `Record<String, Item>`. Then in the filter function, obtain the original object with value and run filter score function on it.
 
@@ -30,7 +29,7 @@ function customFilter(
 	commandKeywords?: string[]
 ): number {
     const obj = dict[commandValue]
-    
+
     const score = ... // run scoring algo
     return score
 }
@@ -40,12 +39,9 @@ This becomes more complicated, and why don't I use an existing solution like `fu
 
 # Solution
 
-* Use fuse.js for filtering (support multi-fields)
-    
-* Use [**TanStack Virtual**](https://tanstack.com/virtual/latest/docs/introduction) to render the list
-    
-    * Even when there are thousands of list items, only ~30 will be rendered on the list
-        
+- Use fuse.js for filtering (support multi-fields)
+- Use [**TanStack Virtual**](https://tanstack.com/virtual/latest/docs/introduction) to render the list
+  - Even when there are thousands of list items, only ~30 will be rendered on the list
 
 This solution should be very simple, just follow [**TanStack Virtual**](https://tanstack.com/virtual/latest/docs/introduction)'s example code in docs.
 
@@ -59,40 +55,40 @@ The position of each item are controlled with `translateY` style property, and c
 
 ```typescript
 // utils.ts this file contains types and functions for genering dummy data
-import { faker } from "@faker-js/faker"
+import { faker } from "@faker-js/faker";
 
 export function generateId() {
-	return Math.random().toString(36).substring(2, 15)
+  return Math.random().toString(36).substring(2, 15);
 }
 
 export type Item = {
-	id: string
-	name: string
-	description: string
-}
+  id: string;
+  name: string;
+  description: string;
+};
 
 export type Section = {
-	name: string
-	items: Item[]
-	sectionRef: HTMLDivElement | null
-	sectionHeight: number
-}
+  name: string;
+  items: Item[];
+  sectionRef: HTMLDivElement | null;
+  sectionHeight: number;
+};
 
 export function getItems(n: number = 10): Item[] {
-	return Array.from({ length: n }, () => ({
-		id: generateId(),
-		name: faker.person.fullName(),
-		description: faker.lorem.sentence()
-	}))
+  return Array.from({ length: n }, () => ({
+    id: generateId(),
+    name: faker.person.fullName(),
+    description: faker.lorem.sentence(),
+  }));
 }
 
 export function getSections(n: number = 10): Section[] {
-	return Array.from({ length: n }, () => ({
-		name: faker.lorem.word(),
-		items: getItems(3),
-		sectionRef: null,
-		sectionHeight: 0
-	}))
+  return Array.from({ length: n }, () => ({
+    name: faker.lorem.word(),
+    items: getItems(3),
+    sectionRef: null,
+    sectionHeight: 0,
+  }));
 }
 ```
 

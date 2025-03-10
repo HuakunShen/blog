@@ -1,7 +1,7 @@
 ---
 title: IIFE
 author: HK
-tags: [Web]
+tags: [Web, JavaScript]
 date: 2024-06-09
 ---
 

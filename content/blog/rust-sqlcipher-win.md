@@ -2,6 +2,7 @@
 title: Rust Sqlite Cipher (Windows)
 date: 2024-10-29
 author: HK
+tags: [Rust, DB, SQLite]
 ---
 
 To use sqlite with encryption enabled, [rusqlite](https://crates.io/crates/rusqlite) is a popular option. Just enable `bundled-sqlcipher` feature.

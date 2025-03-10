@@ -2,6 +2,7 @@
 title: Asymmetric Encryption and TLS in Rust
 date: 2024-10-19
 author: HK
+tags: [Rust, Cryptography]
 ---
 
 In this article, I will briefly discuss application of Asymmetric Encryption (ed25519) and TLS in Rust.

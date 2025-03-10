@@ -2,6 +2,7 @@
 title: Read Safari Bookmark
 date: 2024-11-21
 author: HK
+tags: [MacOS]
 ---
 
 On Mac, Safari bookmarks are stored in `~/Library/Safari/Bookmarks.plist`.

@@ -1,12 +1,50 @@
 "use client";
-import Link from "next/link";
 import { blog } from "@/lib/source";
 import Fuse from "fuse.js";
-import BlogCard from "./BlogCard";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect, useRef } from "react";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
-export default function Home() {
+function BlogCard({
+  url,
+  title,
+  description,
+  date,
+  tags,
+}: {
+  url: string;
+  title: string;
+  description?: string;
+  date: Date | string;
+  tags?: string[];
+}) {
+  return (
+    <Link
+      href={url}
+      className="block bg-fd-card rounded-lg shadow-md overflow-hidden p-6"
+    >
+      <h2 className="text-xl font-semibold mb-2">{title}</h2>
+      <p className="mb-4">{description}</p>
+      {date && (
+        <p className="text-sm text-fd-muted-foreground">
+          {new Date(date).toDateString()}
+        </p>
+      )}
+      <div className="flex gap-1 mt-2 overflow-auto">
+        {tags?.map((tag) => {
+          return (
+            <Badge key={tag} className="z-50 py-[0.5] px-1 text-xs">
+              {tag}
+            </Badge>
+          );
+        })}
+      </div>
+    </Link>
+  );
+}
+
+export default function BlogPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const posts = blog.getPages().sort((a, b) => {

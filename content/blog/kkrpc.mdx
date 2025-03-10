@@ -3,7 +3,9 @@ title: kkrpc
 author: HK
 date: 2025-03-07
 description: kkrpc is a Remote Procedural Call protocol designed for TypeScript. Inspired by comlink and similar to tRPC.
+tags: ["TypeScript", "Web", "RPC"]
 ---
+
 Talk is cheap. Show me the code: [https://github.com/kunkunsh/kkrpc](https://github.com/kunkunsh/kkrpc)
 
 Documentation: [https://docs.kkrpc.kunkun.sh/](https://docs.kkrpc.kunkun.sh/)
@@ -13,15 +15,11 @@ Documentation: [https://docs.kkrpc.kunkun.sh/](https://docs.kkrpc.kunkun.sh/)
 kkrpc is a Remote Procedural Call protocol designed for TypeScript. Inspired by [comlink](https://github.com/GoogleChromeLabs/comlink) and similar to [tRPC](https://trpc.io/).
 
 > A TypeScript-first RPC library that enables seamless bi-directional communication between processes. Call remote functions as if they were local, with full TypeScript type safety and autocompletion support.
-> 
-> * [JSR Package](https://jsr.io/@kunkun/kkrpc)
->     
-> * [NPM Pac](https://jsr.io/@kunkun/kkrpc)[kage](https://www.npmjs.com/package/kkrpc)
->     
-> * [Documen](https://jsr.io/@kunkun/kkrpc)[tati](https://www.npmjs.com/package/kkrpc)[on by JSR](https://jsr.io/@kunkun/kkrpc)
->     
-> * [Typedoc D](https://www.npmjs.com/package/kkrpc)[oc](https://jsr.io/@kunkun/kkrpc/doc)[umentation](https://jsr.io/@kunkun/kkrpc)
->     
+>
+> - [JSR Package](https://jsr.io/@kunkun/kkrpc)
+> - [NPM Pac](https://jsr.io/@kunkun/kkrpc)[kage](https://www.npmjs.com/package/kkrpc)
+> - [Documen](https://jsr.io/@kunkun/kkrpc)[tati](https://www.npmjs.com/package/kkrpc)[on by JSR](https://jsr.io/@kunkun/kkrpc)
+> - [Typedoc D](https://www.npmjs.com/package/kkrpc)[oc](https://jsr.io/@kunkun/kkrpc/doc)[umentation](https://jsr.io/@kunkun/kkrpc)
 
 For example, if you want to run a Deno process from a node.js process or bun process, instead of using argv or stdin, stdout, stderr to communicate, kkrpc can be used to call exposed functions defined in another process like if they were a local function, without worrying about argument parsing or validation.
 
@@ -50,7 +48,7 @@ I started with basic wrapper functions around `postMessage`. Then I found it too
 Then I come across Comlink.
 
 > Comlink makes [WebWorkers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API) enjoyable. Comlink is a **tiny library (1.1kB)**, that removes the mental barrier of thinking about `postMessage` and hides the fact that you are working with workers.
-> 
+>
 > At a more abstract level it is an RPC implementation for `postMessage` and [ES6 Proxies.](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
 
 [Comlink](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) is designed for the main thread to call functions exposed in web worker (also supports iframe).
@@ -64,31 +62,35 @@ In the main thread, I expose multiple API objects.
 ```typescript
 // main thread
 expose({
-    fs: {
-        read(file: string) {},
-        write(file: string, content: string) {},
-        exists(file: string): boolean {},
-    },
-    clipboard: {
-        readText: () => {},
-        writeText: (text: string) => {},
-    }
-})
+  fs: {
+    read(file: string) {},
+    write(file: string, content: string) {},
+    exists(file: string): boolean {},
+  },
+  clipboard: {
+    readText: () => {},
+    writeText: (text: string) => {},
+  },
+});
 ```
 
 Extensions are expected to import API proxies in API package like this.
 
 ```typescript
-import { clipboard, fs, toast } from "@kksh/api/headless"
+import { clipboard, fs, toast } from "@kksh/api/headless";
 ```
 
 Each API has a separate API object. So I wrap each of them with `Comlink.wrap()`. Here is a rough demo of how code is written in the `@kksh/api` package.
 
 ```typescript
-import { windowEndpoint, wrap, type Remote } from "comlink"
+import { windowEndpoint, wrap, type Remote } from "comlink";
 
-export const clipboard = wrap(windowEndpoint(globalThis.parent)) as unknown as IClipboard
-export const fs = wrap(windowEndpoint(globalThis.parent)) as unknown as IClipboard
+export const clipboard = wrap(
+  windowEndpoint(globalThis.parent)
+) as unknown as IClipboard;
+export const fs = wrap(
+  windowEndpoint(globalThis.parent)
+) as unknown as IClipboard;
 ```
 
 This works in debug mode, and has different behavior in release mode.
@@ -109,10 +111,8 @@ In my case, I am building a desktop app with Tauri, which uses the WebKit and We
 
 See issues (nobody is maintaining Comlink):
 
-* [How to releaseProxy from the `expose()` side?](https://github.com/GoogleChromeLabs/comlink/issues/674)
-    
-* [How to prevent auto `releaseProxy`](https://github.com/GoogleChromeLabs/comlink/issues/667)
-    
+- [How to releaseProxy from the `expose()` side?](https://github.com/GoogleChromeLabs/comlink/issues/674)
+- [How to prevent auto `releaseProxy`](https://github.com/GoogleChromeLabs/comlink/issues/667)
 
 Then I switched to another design. Since `wrap` returns a proxy, I can set its type to whatever I want.
 
@@ -141,43 +141,54 @@ It works similarly to Comlink, but don’t care about proxy release. It uses `po
 Here is an example with Web Worker, both side can call `add()` function exposed on the other side with a single channel.
 
 <div data-node-type="callout">
-<div data-node-type="callout-emoji">💡</div>
-<div data-node-type="callout-text">Each end of the channel can expose different APIs, simply pass the 2 API interfaces as generics to <code>RPCChannel</code>. The following example shares the same API interface for both sides to keep the sample short.</div>
+  <div data-node-type="callout-emoji">💡</div>
+  <div data-node-type="callout-text">
+    Each end of the channel can expose different APIs, simply pass the 2 API
+    interfaces as generics to <code>RPCChannel</code>. The following example
+    shares the same API interface for both sides to keep the sample short.
+  </div>
 </div>
 
 ```typescript
 // math.ts
 export interface API {
-    add: (a: number, b: number) => Promise<number>
+  add: (a: number, b: number) => Promise<number>;
 }
 
 export const apiMethods: API = {
-	add: async (a: number, b: number) => a + b
-}
+  add: async (a: number, b: number) => a + b,
+};
 ```
 
 ```typescript
 // Main thread
-import { RPCChannel, WorkerChildIO, type DestroyableIoInterface } from "kkrpc"
+import { RPCChannel, WorkerChildIO, type DestroyableIoInterface } from "kkrpc";
 
-const worker = new Worker(new URL("./scripts/worker.ts", import.meta.url).href, { type: "module" })
-const io = new WorkerChildIO(worker)
-const rpc = new RPCChannel<API, API, DestroyableIoInterface>(io, { expose: apiMethods })
-const api = rpc.getAPI()
+const worker = new Worker(
+  new URL("./scripts/worker.ts", import.meta.url).href,
+  { type: "module" }
+);
+const io = new WorkerChildIO(worker);
+const rpc = new RPCChannel<API, API, DestroyableIoInterface>(io, {
+  expose: apiMethods,
+});
+const api = rpc.getAPI();
 
-expect(await api.add(1, 2)).toBe(3)
+expect(await api.add(1, 2)).toBe(3);
 ```
 
 ```typescript
 // web worker
-import { RPCChannel, WorkerParentIO, type DestroyableIoInterface } from "kkrpc"
+import { RPCChannel, WorkerParentIO, type DestroyableIoInterface } from "kkrpc";
 
-const io: DestroyableIoInterface = new WorkerChildIO()
-const rpc = new RPCChannel<API, API, DestroyableIoInterface>(io, { expose: apiMethods })
-const api = rpc.getAPI()
+const io: DestroyableIoInterface = new WorkerChildIO();
+const rpc = new RPCChannel<API, API, DestroyableIoInterface>(io, {
+  expose: apiMethods,
+});
+const api = rpc.getAPI();
 
-const sum = await api.add(1, 2)
-expect(sum).toBe(3)
+const sum = await api.add(1, 2);
+expect(sum).toBe(3);
 ```
 
 `WorkerChildIO` is the adapter, the same code can be reused with stdio, http, web socket, and browser extensions by swapping the adapter. An adapter is responsible for reading (receiving) and writing (sending) request/responses to the other side of the channel.
@@ -194,11 +205,11 @@ Each message can serve as a request, response or callback. `method` is used to l
 
 ```typescript
 interface Message<T = any> {
-  id: string
-  method: string
-  args: T
-  type: "request" | "response" | "callback" // Add "callback" type
-  callbackIds?: string[] // Add callbackIds field
+  id: string;
+  method: string;
+  args: T;
+  type: "request" | "response" | "callback"; // Add "callback" type
+  callbackIds?: string[]; // Add callbackIds field
 }
 ```
 
@@ -208,9 +219,9 @@ To make `kkRPC` work anywhere, `IoInterface` is introduced. It’s a common inte
 
 ```typescript
 interface IoInterface {
-  name: string
-  read(): Promise<Buffer | Uint8Array | string | null> // Reads input
-  write(data: string): Promise<void> // Writes output
+  name: string;
+  read(): Promise<Buffer | Uint8Array | string | null>; // Reads input
+  write(data: string): Promise<void>; // Writes output
 }
 ```
 
