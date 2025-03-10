@@ -10,19 +10,17 @@ title: PID Control
 - Disadvantages of potential fields
 - Vector Field Histogram
 
-
-
 # Intro
 
 ## Goal
 
 Figure out how to generate the **Control Inputs (Actuating Signal)** so we get the desired **Controlled Variable (output/state)**.
 
-There is always error between **Commanded Variable (what we want the system to do)** and the output (Controled Variable), otherwise, it's called Zero Error. <u>*We want to drive error to zero over time.*</u> 
+There is always error between **Commanded Variable (what we want the system to do)** and the output (Controled Variable), otherwise, it's called Zero Error. <u>_We want to drive error to zero over time._</u>
 
 **Solution: Controller**
 
-Controller's job is to reduce error. 
+Controller's job is to reduce error.
 
 ## PID
 
@@ -36,7 +34,7 @@ $$\omega=K_pe(t)$$
 
 ### I: Integral (Past)
 
-This takes the past error into account. It integrates error over time, and the goal is to reach a integral error of zero. 
+This takes the past error into account. It integrates error over time, and the goal is to reach a integral error of zero.
 
 For example, we are -5m from the $goal$, then +3m, then -1m, etc. As the integral of error goes to zero, we also gets closer to the $goal$.
 
@@ -46,25 +44,17 @@ Integral of error from the beginning of the time: $\int^{\tau=t}_{\tau=0}e(\tau)
 
 $$\omega=K_pe(t)+K_i\int^{\tau=t}_{\tau=0}e(\tau)d\tau$$
 
-
-
 ### D: Derivative (Future)
 
 Sometimes we don't want to go over the $goal$. e.g. the target height of a drone is 50m, it might be too dangerous to reach 51m, or it's beyond the actuator's limit.
 
 In this case, we add one more term: future/**derivative**. Derivative is the rate of change, and tells the future of a system. A positive derivative of speed means a drone will fly higher in the future. If we take this term into account, it avoids going (too much) over the 50m line.
 
-
-
 $$\omega=K_pe(t)+K_i\int^{\tau=t}_{\tau=0}e(\tau)d\tau+K_d \dot{e}(t)$$
 
-
-
-Each term has a **weighting factor** that engineer needs to turn. 
+Each term has a **weighting factor** that engineer needs to turn.
 
 PID is the simplest controller that uses the past, present and future error to achieve a steady state (Zero Error).
-
-
 
 # How to Implement PID
 
@@ -108,8 +98,6 @@ PID is the simplest controller that uses the past, present and future error to a
 
 - Limit or stop the integral term when detecting large errors and windup
 
-
-
 # How to Tune the PID
 
 ## Manually
@@ -122,11 +110,9 @@ PID is the simplest controller that uses the past, present and future error to a
 
 3. Add a small integral gain
 
-   
+## Ziegler-Nichols heuristic
 
-   
-
-## [Ziegler-Nichols heuristic]([Ziegler–Nichols method - Wikipedia](https://en.wikipedia.org/wiki/Ziegler–Nichols_method))
+[Ziegler–Nichols method - Wikipedia](https://en.wikipedia.org/wiki/Ziegler–Nichols_method)
 
 1. Use only the proportional term (set other gains/terms to zero)
 2. When you see **consistent** oscillations, record the proportional gain $K_u$ (aka ultimate gain) and the oscillation period $T_u$.
@@ -138,8 +124,6 @@ PID is the simplest controller that uses the past, present and future error to a
 | $PD$          | 0.8$K_u$  | -         | $T_u/8$ |
 | classic $PID$ | 0.6$K_u$  | $T_u/2$   | $T_u/8$ |
 
-
-
 ## Automatic
 
 **Slef-tuning PID Controllers**
@@ -147,8 +131,6 @@ PID is the simplest controller that uses the past, present and future error to a
 After manual or Z-N tweaking, you can use coordinate ascent to search for a better set of parameters automatically.
 
 TODO: fill in the code from lecture slide
-
-
 
 # When is PID Insufficient
 
@@ -158,15 +140,11 @@ TODO: fill in the code from lecture slide
 - Systems with high-frequency oscillations
 - High-frequency variations on the target state
 
-
-
 # Cascading PID
 
 - Sometimes we have multiple error sources (e.g. multiple sensors) and one actuator to control.
-- We can use a master PID loop that sets the setpoint for the slave PID loop. 
+- We can use a master PID loop that sets the setpoint for the slave PID loop.
   - Master (outer loop) runs at low rate, while slave (inner loop) runs at higher rate.
-
-
 
 # Drawbacks of Potential Fields
 
@@ -183,23 +161,15 @@ TODO: fill in the code from lecture slide
 - Unstable Oscillation
 
   - The dynamics of the robot/environment system can become unstable.
-  -  High speeds, narrow corridors, sudden changes
-
-
-
-
+  - High speeds, narrow corridors, sudden changes
 
 # Vector Field Histogram
 
 TODO: listen to lecture and fill in the notes here
 
-
-
-
-
 # Dynamic Window Approach (DWA)
 
-Similar to back-tracking algorithm. Use simulation to simulate different scenarios. 
+Similar to back-tracking algorithm. Use simulation to simulate different scenarios.
 
 Local, reactive controller
 
@@ -211,13 +181,7 @@ Local, reactive controller
 6. Reward proximity to goal.
 7. Pick control with highest score that doesn’t lead to collision.
 
-
-
-
-
-
-
 # Reference
 
 - [MATLAB YouTube Playlist: Understanding PID Control]([Understanding PID Control, Part 1: What Is PID Control? - YouTube](https://www.youtube.com/watch?v=wkfEZmsQqiA&list=PLn8PRpmsu08pQBgjxYFXSsODEF3Jqmm-y))
-- 
+-
