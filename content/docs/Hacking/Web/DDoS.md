@@ -12,7 +12,7 @@ DoS uses a single computer, DDoS uses many, such as [botnet](https://www.cloudfl
 
 The source of attack machines can come from infected computers or [IoT devices](https://www.cloudflare.com/en-ca/learning/ddos/glossary/internet-of-things-iot/).
 
-![](https://www.cloudflare.com/img/learning/ddos/glossary/dos-attack/dos-vs-ddos-attack.png)
+![](https://i.imgur.com/glvaPqV.png)
 
 ## Types of Attack
 
