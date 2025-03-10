@@ -32,6 +32,9 @@ importers:
       fumadocs-ui:
         specifier: 15.0.15
         version: 15.0.15(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(fumadocs-core@15.0.15(@types/react@19.0.10)(next@15.2.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(next@15.2.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(tailwindcss@4.0.12)
+      fuse.js:
+        specifier: ^7.1.0
+        version: 7.1.0
       glob:
         specifier: ^11.0.1
         version: 11.0.1
@@ -1679,6 +1682,10 @@ packages:
     peerDependenciesMeta:
       tailwindcss:
         optional: true
+
+  fuse.js@7.1.0:
+    resolution: {integrity: sha512-trLf4SzuuUxfusZADLINj+dE8clK1frKdmqiJNb1Es75fmI5oY6X2mxLVUciLLjxqw/xr72Dhy+lER6dGd02FQ==}
+    engines: {node: '>=10'}
 
   get-nonce@1.0.1:
     resolution: {integrity: sha512-FJhYRoDaiatfEkUK8HKlicmu/3SGFD51q3itKDGoSTysQJBnfOcxU5GxnhE1E6soB76MbT0MBtnKJuXyAx+96Q==}
@@ -4259,6 +4266,8 @@ snapshots:
     transitivePeerDependencies:
       - '@types/react'
       - '@types/react-dom'
+
+  fuse.js@7.1.0: {}
 
   get-nonce@1.0.1: {}
 
