@@ -1,0 +1,311 @@
+---
+title: Svelte AI Chat
+series: [Kunkun]
+author: HK
+date: 2025-03-11
+tags: [Kunkun, Svelte]
+---
+
+Chat apps are very popular since ChatGPT got viral, and so many tools were created for building Chat apps, e.g. langchain.
+
+However, almost all AI chat apps I've seen are created with React.
+Svelte is my favourite and what I used to create [Kunkun](https://kunkun.sh), and I have to implement a AI chat app with svelte.
+
+## Dependencies
+
+- [Vercel's AI sdk](https://sdk.vercel.ai/)
+  - For svelte: https://sdk.vercel.ai/docs/getting-started/svelte
+  - Vercel's AI sdk is very powerful with many features, and most importantly, supports svelte.
+- [svelte-exmarkdown](https://github.com/ssssota/svelte-exmarkdown)
+  - `svelte-exmarkdown` is extensible, supports rehype and remark plugins, and also custom renderer.
+    - Without these features, I won't be able to create code highlight, latex, or copy button on code blocks.
+  - [Docs](https://ssssota.github.io/svelte-exmarkdown/docs/01-getting-started)
+
+## Markdown Component
+
+```svelte title="Markdown.svelte"
+<script lang="ts">
+	import rehypeShikiFromHighlighter from "@shikijs/rehype/core"
+	import rehypeClassNames from "rehype-class-names"
+	import rehypeKatex from "rehype-katex"
+	import remarkMath from "remark-math"
+	import { createHighlighterCoreSync } from "shiki/core"
+	import { createJavaScriptRegexEngine } from "shiki/engine/javascript"
+	import svelte from "shiki/langs/svelte.mjs"
+	import ts from "shiki/langs/typescript.mjs"
+	import githubDarkDefault from "shiki/themes/github-dark-default.mjs"
+	import Markdown from "svelte-exmarkdown"
+	import type { Plugin } from "svelte-exmarkdown"
+	import Pre from "./Pre.svelte"
+
+	const addClass: Plugin = {
+		rehypePlugin: [
+			rehypeClassNames,
+			{
+				pre: "p-4 rounded-md overflow-auto"
+			}
+		]
+	}
+
+	const shikiPlugin = {
+		rehypePlugin: [
+			rehypeShikiFromHighlighter,
+			createHighlighterCoreSync({
+				themes: [githubDarkDefault],
+				langs: [
+					ts,
+					svelte,
+				],
+				engine: createJavaScriptRegexEngine()
+			}),
+			{
+				theme: "github-dark-default"
+			}
+		]
+	} satisfies Plugin
+
+	const plugins: Plugin[] = [
+		shikiPlugin,
+		{ remarkPlugin: [remarkMath], rehypePlugin: [rehypeKatex] },
+		addClass,
+		{ renderer: { pre: Pre } }
+	]
+
+	let { md }: { md: string } = $props()
+</script>
+
+<Markdown {md} {plugins} />
+```
+
+The `pre` custom renderer is optional. I used a custom `pre` renderer to add a copy button.
+
+```svelte title="Pre.svelte"
+<script lang="ts">
+	import { Button } from '@kksh/svelte5';
+	import { CopyIcon } from 'lucide-svelte';
+	import type { Snippet } from 'svelte';
+
+	let pre: HTMLPreElement;
+
+	let {
+		children,
+		class: className,
+		style
+	}: { children: Snippet; class?: string; style?: string } = $props();
+</script>
+
+<div class="relative">
+	<pre class={className} {style} bind:this={pre}>{@render children()}</pre>
+	<Button
+		size="icon"
+		variant="outline"
+		onclick={() => navigator.clipboard.writeText(pre.textContent ?? '')}
+		class="absolute right-2 top-2"
+	>
+		<CopyIcon />
+	</Button>
+</div>
+```
+
+## Server
+
+https://sdk.vercel.ai/docs/getting-started/svelte contains example to create server with ai sdk with SvelteKit server routes.
+
+However, I prefer using a separate server for this. My current favourite server framework is [Hono](https://hono.dev/).
+
+See https://sdk.vercel.ai/cookbook/api-servers/hono#hono for AI Sdk's Hono sample code.
+
+<details>
+  <summary>Sample Hono Code</summary>
+
+```ts title="server.ts"
+import { openai } from "@ai-sdk/openai";
+import { serve } from "@hono/node-server";
+import { streamText } from "ai";
+import { Hono } from "hono";
+import { stream } from "hono/streaming";
+
+const app = new Hono();
+
+app.post("/", async (c) => {
+  const result = streamText({
+    model: openai("gpt-4o"),
+    prompt: "Invent a new holiday and describe its traditions.",
+  });
+
+  // Mark the response as a v1 data stream:
+  c.header("X-Vercel-AI-Data-Stream", "v1");
+  c.header("Content-Type", "text/plain; charset=utf-8");
+
+  return stream(c, (stream) => stream.pipe(result.toDataStream()));
+});
+
+serve({ fetch: app.fetch, port: 8080 });
+```
+
+</details>
+
+## Chat Page
+
+The `SERVER_URL_URL` constant is the url to the server. `https://<domain>/api/chat`.
+
+```svelte title="chat/+page.svelte"
+<script lang="ts">
+	import { SERVER_URL_URL } from '@/constants';
+	import { useChat } from '@ai-sdk/svelte';
+	import { Markdown } from '@kksh/ui/markdown';
+	import { Button, Textarea, Card, Input, Badge } from '@kksh/svelte5';
+	import { ScrollArea } from '@kksh/ui';
+	import { IconMultiplexer } from '@kksh/ui';
+	import { IconEnum } from '@kksh/api/models';
+	import { GlobeIcon } from 'lucide-svelte';
+	import sampleMessages from './sample-messages.json';
+	import 'katex/dist/katex.min.css';
+	import { onMount } from 'svelte';
+	import Inspect from 'svelte-inspect-value';
+	import { dev } from '$app/environment';
+	import { preferences } from '@/stores/preference';
+	import { fade } from 'svelte/transition';
+	import { type UIMessage } from 'ai';
+
+	const { data } = $props();
+	let usage = $state<{
+		completionTokens: number;
+		promptTokens: number;
+		totalTokens: number;
+	}>({
+		completionTokens: 0,
+		promptTokens: 0,
+		totalTokens: 0
+	});
+	const { input, handleSubmit, messages, setMessages } = useChat({
+		api: SERVER_URL_URL,
+		headers: {
+			Authorization: `Bearer ${data.session?.access_token}`
+		},
+		onResponse: (response) => {
+			console.log(response.headers);
+		},
+		onFinish: (msg, options) => {
+			console.log('finished', msg, options);
+			usage = options.usage;
+		}
+	});
+
+	let messagesContainer: HTMLDivElement | null = $state(null);
+
+	$effect(() => {
+		if ($messages.length > 0) {
+			scrollToBottom();
+		}
+	});
+
+	onMount(() => {
+		scrollToBottom();
+		if (dev) {
+			setMessages(sampleMessages as unknown as UIMessage[]);
+		}
+	});
+
+	const scrollToBottom = () => {
+		if (messagesContainer) {
+			messagesContainer.scrollTo({
+				top: messagesContainer.scrollHeight,
+				behavior: 'smooth'
+			});
+		}
+	};
+
+	const handleKeyDown = (event: KeyboardEvent) => {
+		// Handle Ctrl+K to clear messages
+		if (event.key === 'k' && (event.ctrlKey || event.metaKey)) {
+			event.preventDefault();
+			setMessages([]);
+			$input = '';
+			return;
+		}
+
+		// Handle Enter for submission (but not with Shift)
+		if (event.key === 'Enter' && !event.shiftKey) {
+			event.preventDefault();
+			handleSubmit(event);
+		}
+	};
+
+	/* -------------------------------------------------------------------------- */
+	/*                               Textarea Expand                              */
+	/* -------------------------------------------------------------------------- */
+	let textareaEl: HTMLTextAreaElement | null = $state(null);
+
+	const autoResize = (textarea: HTMLTextAreaElement) => {
+		textarea.style.height = 'auto';
+		const newHeight = Math.min(textarea.scrollHeight, 10 * 24); // Assuming ~24px per row
+		textarea.style.height = newHeight + 'px';
+	};
+
+	const handleInput = (event: Event) => {
+		const textarea = event.target as HTMLTextAreaElement;
+		autoResize(textarea);
+	};
+</script>
+
+{#snippet usageDisplay()}
+	<div class="flex gap-2 text-xs opacity-35">
+		<p>Tokens used: {usage.totalTokens}</p>
+		<p>Prompt tokens: {usage.promptTokens}</p>
+		<p>Completion tokens: {usage.completionTokens}</p>
+	</div>
+{/snippet}
+<div class="container flex h-screen max-w-[70em] flex-col pt-12">
+	{#if $preferences.developerMode}
+		<div transition:fade>
+			<Inspect value={sampleMessages} />
+		</div>
+	{/if}
+	<ScrollArea.Root class="grow pr-4" bind:viewportRef={messagesContainer}>
+		{#each $messages as message}
+			{#if message.role === 'user'}
+				<div class="ml-auto max-w-lg rounded-lg border p-2">
+					<p>{message.content}</p>
+				</div>
+			{:else}
+				<div>
+					<Badge class="mb-1 rounded-full" variant="secondary">{message.role}</Badge>
+					<Markdown md={message.content} />
+				</div>
+			{/if}
+		{/each}
+	</ScrollArea.Root>
+	<div class="w-full pb-4 pr-4">
+		<form class="w-full" onsubmit={handleSubmit}>
+			<Card.Root class="space-y-1 p-2">
+				<Textarea
+					autofocus
+					bind:value={$input}
+					bind:ref={textareaEl}
+					class="min-h-[2.5rem] resize-none overflow-y-auto border-none focus-visible:ring-0"
+					placeholder="Ask me anything..."
+					onkeydown={handleKeyDown}
+					oninput={handleInput}
+					rows={1}
+				/>
+				<div class="flex items-center justify-between gap-2">
+					<Button variant="outline" size="sm" class="flex items-center gap-1 rounded-full">
+						<GlobeIcon />
+						<span>Search</span>
+					</Button>
+					<Button type="submit" class="rounded-full" size="icon" variant="outline">
+						<IconMultiplexer
+							icon={{
+								type: IconEnum.Iconify,
+								value: 'tabler:arrow-up'
+							}}
+						/>
+					</Button>
+				</div>
+				{@render usageDisplay()}
+			</Card.Root>
+		</form>
+	</div>
+</div>
+```

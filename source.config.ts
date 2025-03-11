@@ -28,5 +28,6 @@ export const blogPosts = defineCollections({
     author: z.string(),
     date: z.string().date().or(z.date()),
     tags: z.array(z.string()).optional(),
+    series: z.array(z.string()).optional(),
   }),
 });

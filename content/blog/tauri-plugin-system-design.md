@@ -3,6 +3,7 @@ title: Tauri Plugin System Design
 author: HK
 tags: [Tauri, Rust, Web, Plugin]
 date: 2024-05-07
+series: ["Kunkun"]
 ---
 
 In [Raycast Analysis](https://huakun.tech/notes/Analysis/LaunchApp/raycast) and [uTools Analysis](https://huakun.tech/notes/Analysis/LaunchApp/uTools) I discussed the two successful app launchers and their plugin system designs. But both of them have big limitations. Raycast is mac-only. uTools is cross-platform (almost perfect), but it is built with Electron, thus large bundle size and memory consumption.
