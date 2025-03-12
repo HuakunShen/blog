@@ -18,7 +18,7 @@ export default async function Page(props: {
 
 	return (
 		<>
-			<div className="container rounded-xl border py-12 md:px-8">
+			<div className="container rounded-xl border py-12 mt-5 md:px-8">
 				<h1 className="mb-2 text-3xl font-bold">{page.data.title}</h1>
 				<p className="mb-4 text-fd-muted-foreground">{page.data.description}</p>
 				<Link href="/blog" className="cursor-pointer">
