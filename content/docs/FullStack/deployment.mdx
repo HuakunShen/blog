@@ -33,14 +33,16 @@ Usually, you can choose to use CLI to manually deploy, or use CICD to deploy aut
 - [Heroku](https://www.heroku.com/)
 - [Firebase Hosting](https://firebase.google.com/docs/hosting)
 - [GCP App Engine](https://cloud.google.com/appengine) and [doc](https://cloud.google.com/appengine/docs/standard/an-overview-of-app-engine)
-  - [My Notes](./Cloud/GCP/AppEngine.md)
+  - [My Notes](/docs/FullStack/Cloud/GCP/AppEngine)
   - You pretty much just need to run `gcloud app deploy` to deploy an app that can run fine locally
 - [GCP Cloud Run](https://cloud.google.com/run) and [doc](https://cloud.google.com/run/docs/quickstarts/deploy-container)
   - Can be easily deployed with `gcloud run deploy`
   - Successor of App Engine
   - Not only supports standard language deployments, but also Docker deployment
 
-## Reverse Proxy
+## Self Managed Reverse Proxy
+
+> Not recommended for beginners
 
 ![Cloudflare Illustration](https://www.cloudflare.com/img/learning/cdn/glossary/reverse-proxy/reverse-proxy-flow.svg)
 
@@ -60,9 +62,8 @@ Certbot has nginx plugin for easy SSL deployment with letsencrypt.
   height="500"
   src="https://www.youtube.com/embed/oykl1Ih9pMg"
   title="Full Node.js Deployment - NGINX, SSL With Lets Encrypt"
-  frameborder="0"
   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  allowfullscreen
+  allowFullScreen
 ></iframe>
 
 ### Docker + Nginx + letsencrypt
@@ -72,7 +73,6 @@ Certbot has nginx plugin for easy SSL deployment with letsencrypt.
   height="500"
   src="https://www.youtube.com/embed/zJPlyjfV4C0"
   title="Deploy Web App with Docker, Nginx and SSL (HTTPS)"
-  frameborder="0"
   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  allowfullscreen
+  allowFullScreen
 ></iframe>
