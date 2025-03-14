@@ -1,5 +1,5 @@
 ---
-title: Web Dev
+title: Full Stack
 ---
 
 ## Related Topics
