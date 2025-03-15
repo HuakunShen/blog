@@ -1,3 +1,4 @@
+import { remarkDocGen, fileGenerator } from "fumadocs-docgen";
 import { defineCollections, frontmatterSchema } from "fumadocs-mdx/config";
 import { defineDocs, defineConfig } from "fumadocs-mdx/config";
 import { remarkMermaid } from "@theguild/remark-mermaid";
@@ -15,7 +16,11 @@ export const projects = defineDocs({
 
 export default defineConfig({
   mdxOptions: {
-    remarkPlugins: [remarkMath, remarkMermaid],
+    remarkPlugins: [
+      [remarkDocGen, { generators: [fileGenerator()] }],
+      remarkMath,
+      remarkMermaid,
+    ],
     rehypePlugins: (v) => [rehypeKatex, ...v],
   },
 });
