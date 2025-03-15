@@ -1,4 +1,5 @@
 import { source } from "@/lib/source";
+import { createRelativeLink } from "fumadocs-ui/mdx";
 import {
 	DocsPage,
 	DocsBody,
@@ -18,7 +19,7 @@ export default async function Page(props: {
 	if (!page) notFound();
 
 	const MDX = page.data.body;
-
+	const a = createRelativeLink(source, page);
 	return (
 		<DocsPage
 			toc={page.data.toc}
@@ -34,7 +35,7 @@ export default async function Page(props: {
 			<DocsTitle>{page.data.title}</DocsTitle>
 			<DocsDescription>{page.data.description}</DocsDescription>
 			<DocsBody>
-				<MDX components={{ ...defaultMdxComponents }} />
+				<MDX components={{ ...defaultMdxComponents, a }} />
 			</DocsBody>
 			<Rate
 				onRateAction={async (url, feedback) => {
