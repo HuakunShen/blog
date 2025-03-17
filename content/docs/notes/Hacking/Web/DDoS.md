@@ -22,7 +22,7 @@ Network has 7 layers, aka [OSI model](https://www.cloudflare.com/en-ca/learning/
 
 ### Application Layer
 
-<img src="https://www.cloudflare.com/img/learning/ddos/what-is-a-ddos-attack/http-flood-ddos-attack.png" width="70%" />
+<img src="https://i.imgur.com/z4m34pa.png" width="70%" />
 
 This is HTTP flood.
 

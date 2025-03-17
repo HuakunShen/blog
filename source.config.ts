@@ -1,6 +1,7 @@
 import { remarkDocGen, fileGenerator } from "fumadocs-docgen";
 import { defineCollections, frontmatterSchema } from "fumadocs-mdx/config";
 import { defineDocs, defineConfig } from "fumadocs-mdx/config";
+import remarkGfm from "remark-gfm";
 import { remarkMermaid } from "@theguild/remark-mermaid";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -16,6 +17,7 @@ export default defineConfig({
       [remarkDocGen, { generators: [fileGenerator()] }],
       remarkMath,
       remarkMermaid,
+      remarkGfm,
     ],
     rehypePlugins: (v) => [rehypeKatex, ...v],
   },
