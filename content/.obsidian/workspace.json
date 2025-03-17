@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "37a97a6537a74fe0",
+        "id": "45cff399cbb086a3",
         "type": "tabs",
         "children": [
           {
-            "id": "0ae8f53d1ab6dd4b",
+            "id": "f779f37e3e695cf8",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -161,8 +161,9 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "0ae8f53d1ab6dd4b",
+  "active": "f779f37e3e695cf8",
   "lastOpenFiles": [
+    "Untitled.md",
     "docs/notes/hello.md"
   ]
 }
