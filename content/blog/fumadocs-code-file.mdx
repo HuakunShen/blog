@@ -1,0 +1,116 @@
+---
+title: "Fumadocs Code File"
+author: HK
+tags: [Web, Documentation]
+date: 2025-03-16
+---
+
+[Fumadocs](https://fumadocs.vercel.app/) is a documentation site generator.
+It only supports markdown files. I want the documentation to display code files directly as pages.
+
+Here is a hacky workaround to achieve this.
+
+`content-collections` mode has to be used, instead of the default fumadocs mode.
+
+One drawback I noticed is that mermaid plugin is not supported. Not sure about other plugins, math and katex are supported though.
+
+Modify `content-collections.ts` with the following code:
+
+```ts
+import {
+  Context,
+  defineCollection,
+  defineConfig,
+  Meta,
+} from "@content-collections/core";
+import {
+  createMetaSchema,
+  createDocSchema,
+  transformMDX,
+  TransformOptions,
+} from "@fumadocs/content-collections/configuration";
+import { z } from "zod";
+
+interface BaseDoc {
+  _meta: Meta;
+  title?: string;
+  content: string;
+}
+
+const extCodeBlockMap = {
+  ts: "ts",
+  js: "js",
+  tsx: "tsx",
+  jsx: "jsx",
+  json: "json",
+  rs: "rust",
+  py: "python",
+  css: "css",
+  html: "html",
+  go: "go",
+};
+
+function createCodeBlock(ext: string, code: string) {
+  const lang = extCodeBlockMap[ext as keyof typeof extCodeBlockMap];
+  if (!lang) {
+    return code;
+  }
+  return `\`\`\`${lang}\n${code}\n\`\`\``;
+}
+
+const docs = defineCollection({
+  name: "docs",
+  directory: "content/docs",
+  include: `**/*.{md,mdx,${Object.keys(extCodeBlockMap).join(",")}}`,,
+  schema: (zod: typeof z) => {
+    return {
+      ...createDocSchema(zod),
+      title: z.string().optional(),
+    };
+  },
+  transform: <D extends BaseDoc>(
+    document: D,
+    context: Context,
+    options?: TransformOptions
+  ) => {
+    if (!document.title) {
+      document.title = document._meta.fileName;
+    }
+    const ext = document._meta.extension;
+    if (ext && Object.keys(extCodeBlockMap).includes(ext)) {
+      document.content = createCodeBlock(ext, document.content);
+
+      // this doesn't work, the modified path is not used, so multiple files with the same name and different extensions are treated as duplicates
+      document._meta.path += `-${ext}`;
+    }
+    return transformMDX<D>(document, context, options);
+  },
+});
+
+const metas = defineCollection({
+  name: "meta",
+  directory: "content/docs",
+  include: "**/meta.json",
+  parser: "json",
+  schema: createMetaSchema,
+});
+
+export default defineConfig({
+  collections: [docs, metas],
+});
+```
+
+## Add Plugins
+
+Remark and rehype plugins can be added as such in the `transform` function.
+
+```ts
+return transformMDX<D>(document, context, {
+  remarkPlugins: [
+    [remarkDocGen, { generators: [fileGenerator()] }],
+    remarkMath,
+    remarkMermaid,
+  ],
+  rehypePlugins: (v) => [rehypeKatex, ...v],
+});
+```

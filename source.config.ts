@@ -10,10 +10,6 @@ export const docs = defineDocs({
   dir: "content/docs",
 });
 
-export const projects = defineDocs({
-  dir: "content/projects",
-});
-
 export default defineConfig({
   mdxOptions: {
     remarkPlugins: [

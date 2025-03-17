@@ -8,6 +8,7 @@
 @import "fumadocs-ui/css/preset.css";
 
 @source '../../node_modules/fumadocs-ui/dist/**/*.js';
+@import 'fumadocs-ui/css/black.css';
 
 :root {
 	--card: oklch(1 0 0);

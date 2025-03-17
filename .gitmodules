@@ -1,0 +1,3 @@
+[submodule "content/docs/projects"]
+	path = content/docs/projects
+	url = https://github.com/HuakunShen/projects.git
